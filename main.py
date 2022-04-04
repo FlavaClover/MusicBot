@@ -1,3 +1,7 @@
+import os
+import signal
+
+import telegram.error
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters, ConversationHandler
 from telegram import Update, ReplyKeyboardMarkup
 from mutagen.mp3 import MP3
@@ -48,6 +52,17 @@ def music_by_genre_command(update: Update, _: CallbackContext):
     return 2
 
 
+def send_error(update: Update, _: CallbackContext):
+    raise telegram.error.NetworkError("Hello i am test error")
+
+
+def error_handler(update: Update, context: CallbackContext):
+    error = context.error
+    print(error)
+    if isinstance(error, telegram.error.NetworkError):
+        os.kill(os.getpid(), signal.SIGINT)
+
+
 def main(token: str) -> None:
     updater = Updater(token=token)
 
@@ -55,6 +70,8 @@ def main(token: str) -> None:
 
     dispatcher.add_handler(CommandHandler('start', start_command))
     dispatcher.add_handler(CommandHandler('send_random_audio', send_random_audio_command))
+    dispatcher.add_handler(CommandHandler('test_err', send_error))
+    dispatcher.add_error_handler(error_handler)
 
     get_current_music_handler = ConversationHandler(
         entry_points=[MessageHandler(Filters.regex('Найти песню'), current_music_command)],
@@ -73,7 +90,6 @@ def main(token: str) -> None:
 
     dispatcher.add_handler(get_current_music_handler)
     dispatcher.add_handler(get_music_by_genre_handler)
-    # dispatcher.add_handler(MessageHandler(Filters.text, get_current_music_command))
 
     print(updater.bot.get_me())
     updater.start_polling()
