@@ -41,6 +41,7 @@ def get_current_music(name_music: str, full_path=False):
             if full_path:
                 name = MUSIC_DIR + name
             return name
+    return None
 
 
 def get_music_by_genre(genre: str, full_path=False):
@@ -55,5 +56,5 @@ def get_music_by_genre(genre: str, full_path=False):
 
     return music_list
 
-
-
+# def check_music_existence():
+    

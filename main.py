@@ -30,15 +30,22 @@ def send_random_audio_command(update: Update, _: CallbackContext):
 
 def get_current_music_command(update: Update, _: CallbackContext):
     message = update.effective_message.text
-    send_audio(update, get_current_music(message, full_path=True))
+    result = get_current_music(message, full_path=True)
+    if result is None:
+        update.effective_chat.send_message(text='Такой песни нет')
+    else:
+        send_audio(update, result)
     return ConversationHandler.END
 
 
 def get_music_by_genre_command(update: Update, _: CallbackContext):
     message = update.effective_message.text
     get_music = get_music_by_genre(message, full_path=True)
-    for i in get_music:
-        send_audio(update, i)
+    if len(get_music) == 0:
+        update.effective_chat.send_message(text='Песен с таким жанром нет')
+    else:
+        for i in get_music:
+            send_audio(update, i)
     return ConversationHandler.END
 
 
@@ -56,6 +63,10 @@ def send_error(update: Update, _: CallbackContext):
     raise telegram.error.NetworkError("Hello i am test error")
 
 
+def unknown_command_handler(update: Update, _: CallbackContext):
+    update.effective_chat.send_message(text='Такой комманды нет')
+
+
 def error_handler(update: Update, context: CallbackContext):
     error = context.error
     print(error)
@@ -67,7 +78,6 @@ def main(token: str) -> None:
     updater = Updater(token=token)
 
     dispatcher = updater.dispatcher
-
     dispatcher.add_handler(CommandHandler('start', start_command))
     dispatcher.add_handler(CommandHandler('send_random_audio', send_random_audio_command))
     dispatcher.add_handler(CommandHandler('test_err', send_error))
@@ -90,6 +100,7 @@ def main(token: str) -> None:
 
     dispatcher.add_handler(get_current_music_handler)
     dispatcher.add_handler(get_music_by_genre_handler)
+    dispatcher.add_handler(MessageHandler(Filters.regex('/.*'), unknown_command_handler))
 
     print(updater.bot.get_me())
     updater.start_polling()
